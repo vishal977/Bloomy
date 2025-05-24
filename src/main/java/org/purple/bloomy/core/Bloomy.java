@@ -32,7 +32,7 @@ public class Bloomy<T> {
         calculateCombinedHashAndSetBits(primaryHash, secondaryHash);
     }
 
-    public boolean possiblyContains(T item) {
+    public boolean possiblyContains(T item) throws BloomyHashingException {
         String serializedValue = objectSerializer.apply(item);
         int primaryHash = getPrimaryHash(serializedValue);
         int secondaryHash = getSecondaryHash(serializedValue);
