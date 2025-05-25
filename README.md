@@ -16,6 +16,7 @@ public void bloomyDemo() throws DuplicateHashFunctionException, BloomyHashingExc
                 .secondaryHashService(HashingAlgorithm.MURMUR3)
                 .numberOfHashes(5)
                 .filterSize(10000)
+                .bitSetStore(BloomyBitSetStore.IN_MEMORY)
                 .objectSerializer(s -> s)
                 .build();
         bloomy.register("randomString101");
