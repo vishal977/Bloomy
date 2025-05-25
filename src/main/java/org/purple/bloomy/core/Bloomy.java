@@ -1,23 +1,25 @@
 package org.purple.bloomy.core;
 
+import org.purple.bloomy.core.bitset.BitSetService;
 import org.purple.bloomy.core.exception.BloomyHashingException;
 import org.purple.bloomy.core.hashing.BloomyHashingService;
 
-import java.util.BitSet;
 import java.util.function.Function;
 
 public class Bloomy<T> {
 
     private final int filterSize;
-    private final BitSet bitset;
+    private final BitSetService bitSetService;
     private final int numberOfHashes;
     private final Function<T, String> objectSerializer;
     private final BloomyHashingService primaryHashService;
     private final BloomyHashingService secondaryHashService;
 
-    Bloomy(int filterSize, int numberOfHashes, Function<T, String> objectSerializer, BloomyHashingService primaryHashService, BloomyHashingService secondaryHashService) {
+    Bloomy(int filterSize, int numberOfHashes, Function<T, String> objectSerializer,
+           BloomyHashingService primaryHashService,
+           BloomyHashingService secondaryHashService, BitSetService bitSetService) {
         this.filterSize = filterSize;
-        this.bitset = new BitSet(filterSize);
+        this.bitSetService = bitSetService;
         this.numberOfHashes = numberOfHashes;
         this.objectSerializer = objectSerializer;
         this.primaryHashService = primaryHashService;
@@ -39,7 +41,7 @@ public class Bloomy<T> {
 
         for (int run = 0; run < numberOfHashes; run++) {
             int runningHash = Math.abs((primaryHash + (run * secondaryHash)) % filterSize);
-            if (!bitset.get(runningHash)) {
+            if (!bitSetService.get(runningHash)) {
                 return false;
             }
         }
@@ -49,7 +51,7 @@ public class Bloomy<T> {
     private void calculateCombinedHashAndSetBits(int primaryHash, int secondaryHash) {
         for (int run = 0; run < numberOfHashes; run++) {
             int runningHash = Math.abs((primaryHash + (run * secondaryHash)) % filterSize);
-            bitset.set(runningHash);
+            bitSetService.set(runningHash);
         }
     }
 

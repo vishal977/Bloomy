@@ -1,5 +1,8 @@
 package org.purple.bloomy.core;
 
+import org.purple.bloomy.core.bitset.BitSetFactory;
+import org.purple.bloomy.core.bitset.BitSetService;
+import org.purple.bloomy.core.bitset.BloomyBitSetStore;
 import org.purple.bloomy.core.exception.DuplicateHashFunctionException;
 import org.purple.bloomy.core.hashing.BloomyHashingService;
 import org.purple.bloomy.core.hashing.HashingAlgorithm;
@@ -17,6 +20,7 @@ public class BloomyBuilder<T> {
     private Function<T, String> objectSerializer = Object::toString;
     private HashingAlgorithm primaryHashAlgo;
     private HashingAlgorithm secondaryHashAlgo;
+    private BitSetService bitSetService;
     private BloomyHashingService primaryHashService = new JavaHashcodeHashingService();
     private BloomyHashingService secondaryHashService = new Murmur3HashingService();
 
@@ -39,25 +43,39 @@ public class BloomyBuilder<T> {
         return this;
     }
 
-    public BloomyBuilder<T> primaryHashService(HashingAlgorithm primaryHashAlgo) throws DuplicateHashFunctionException {
-        if (Objects.nonNull(secondaryHashAlgo) && secondaryHashAlgo == primaryHashAlgo) {
-            throw new DuplicateHashFunctionException("Primary hash algorithm cannot be the same as the secondary");
-        }
+    public BloomyBuilder<T> bitSetStore(BloomyBitSetStore bitSetStore) {
+        this.bitSetService = BitSetFactory.getService(bitSetStore, this.filterSize);
+        return this;
+    }
+
+    public BloomyBuilder<T> primaryHashService(HashingAlgorithm primaryHashAlgo) {
+
         this.primaryHashService = BloomyHashServiceFactory.getHashingService(primaryHashAlgo);
         this.primaryHashAlgo = primaryHashAlgo;
         return this;
     }
 
-    public BloomyBuilder<T> secondaryHashService(HashingAlgorithm secondaryHashAlgo) throws DuplicateHashFunctionException {
-        if (Objects.nonNull(primaryHashAlgo) && primaryHashAlgo == secondaryHashAlgo) {
-            throw new DuplicateHashFunctionException("Secondary hash algorithm cannot be the same as the primary");
-        }
+    public BloomyBuilder<T> secondaryHashService(HashingAlgorithm secondaryHashAlgo) {
+
         this.secondaryHashService = BloomyHashServiceFactory.getHashingService(secondaryHashAlgo);
         this.secondaryHashAlgo = secondaryHashAlgo;
         return this;
     }
 
-    public Bloomy<T> build() {
-        return new Bloomy<>(filterSize, numberOfHashes, objectSerializer, primaryHashService, secondaryHashService);
+    public Bloomy<T> build() throws DuplicateHashFunctionException {
+        validateBuild();
+        return new Bloomy<>(filterSize, numberOfHashes, objectSerializer, primaryHashService,
+                secondaryHashService, bitSetService);
+    }
+
+    private void validateBuild() throws DuplicateHashFunctionException {
+
+        if (Objects.isNull(primaryHashAlgo) || Objects.isNull(secondaryHashAlgo)) {
+            throw new IllegalStateException("Please configure primary and secondary hashing algorithms");
+        }
+
+        if (Objects.nonNull(this.primaryHashAlgo) && this.primaryHashAlgo == this.secondaryHashAlgo) {
+            throw new DuplicateHashFunctionException("Secondary hash algorithm cannot be the same as the primary");
+        }
     }
 }
